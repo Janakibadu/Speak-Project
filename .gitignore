@@ -1,0 +1,6 @@
+node_modules/
+.env
+App/server/storage/
+App/frontend/dist/
+.DS_Store
+*.tmp

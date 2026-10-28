@@ -1,0 +1,8 @@
+block;format;adaption;note
+V1;A;no;Storybook with definitions
+V2;B;no;Audio to image, 1 of 4
+V3;C;yes;Remediation after V2
+V4;F_2;no;Image to audio, sound-alike distractor
+V5;C;yes;Remediation after V4 (not labelled "Adaption" in the overview sheet)
+V6;R;no;Yes/no reflection
+V7;C;yes;Remediation after V6

@@ -1,0 +1,10 @@
+block;format;adaption;note
+V1;A;no;Storybook with definitions
+V2;B;no;Audio to image, 1 of 4
+V3;C;yes;Remediation after V2
+V4;F_2;no;Image to audio, sound-alike distractor
+V5;C;yes;Remediation after V4
+V6;AH;no;Question, choose 1 of 2 audios (script: two speakers)
+V7;C;yes;Remediation after V6
+V8;AH;no;Question, choose 1 of 2 audios (script: two speakers)
+V9;C;yes;Remediation after V8

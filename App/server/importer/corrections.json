@@ -1,0 +1,125 @@
+{
+  "_about": "Explicit fixes for broken media names in the client's CSVs (never applied silently: each one is listed in the import report). An entry replaces a cell whose value is exactly `from`, only in `file` (if given). Proposed 21 Oct 2026, to be confirmed by the client - see docs/csv-mapping.md.",
+  "corrections": [
+    {
+      "file": "K2_W6_V1_task.csv",
+      "from": "at_304..mp3",
+      "to": "at_304.mp3",
+      "reason": "double dot"
+    },
+    {
+      "file": "K2_W6_V1_task.csv",
+      "from": "at_307..mp3",
+      "to": "at_307.mp3",
+      "reason": "double dot"
+    },
+    {
+      "file": "K2_W6_V1_task.csv",
+      "from": "at_308..mp3",
+      "to": "at_308.mp3",
+      "reason": "double dot"
+    },
+    {
+      "file": "K2_W6_V2_task.CSV",
+      "from": "stars_correctt.mp3",
+      "to": "stars_correct.mp3",
+      "reason": "typo (double t)"
+    },
+    {
+      "file": "K2_W6_V4_task.CSV",
+      "from": "stars_correct.mp4",
+      "to": "stars_correct.mp3",
+      "reason": "extension auto-incremented by the spreadsheet"
+    },
+    {
+      "file": "K2_W6_V4_task.CSV",
+      "from": "stars_correct.mp5",
+      "to": "stars_correct.mp3",
+      "reason": "extension auto-incremented by the spreadsheet"
+    },
+    {
+      "file": "K2_W6_V4_task.CSV",
+      "from": "stars_correct.mp6",
+      "to": "stars_correct.mp3",
+      "reason": "extension auto-incremented by the spreadsheet"
+    },
+    {
+      "file": "K2_W6_V4_task.CSV",
+      "from": "stars_correct.mp7",
+      "to": "stars_correct.mp3",
+      "reason": "extension auto-incremented by the spreadsheet"
+    },
+    {
+      "file": "K2_W10_G4_task.csv",
+      "from": "stars_correct.mp4",
+      "to": "stars_correct.mp3",
+      "reason": "extension auto-incremented by the spreadsheet"
+    },
+    {
+      "file": "K2_W10_V1_task.csv",
+      "from": "starts.correct.mp3",
+      "to": "stars_correct.mp3",
+      "reason": "typo"
+    },
+    {
+      "file": "K2_W10_V4_task.csv",
+      "from": "starts.correct.mp3",
+      "to": "stars_correct.mp3",
+      "reason": "typo"
+    },
+    {
+      "file": "K2_W6_G1_general.csv",
+      "from": "i_264.mp3",
+      "to": "i_264.jpg",
+      "reason": "image listed with an audio extension"
+    },
+    {
+      "file": "K2_W12_G3_reflection_adaption.csv",
+      "from": "i_680",
+      "to": "i_680.jpg",
+      "reason": "extension missing"
+    },
+    {
+      "file": "K2_W12_V2_task.csv",
+      "from": "i_155.jpg",
+      "to": "i_155.png",
+      "reason": "file exists only as .png"
+    },
+    {
+      "file": "K2_W6_G3_task.csv",
+      "from": "i_416.jpg",
+      "to": "i_416.png",
+      "reason": "file exists only as .png"
+    },
+    {
+      "file": "K2_W6_G3_task.csv",
+      "from": "i_417.jpg",
+      "to": "i_417.png",
+      "reason": "file exists only as .png"
+    },
+    {
+      "file": "K2_W6_G3_example.csv",
+      "from": "i_417.jpg",
+      "to": "i_417.png",
+      "reason": "file exists only as .png"
+    },
+    {
+      "file": "K2_W6_V6_task.csv",
+      "from": "i_025.jpg",
+      "to": "i_025.png",
+      "reason": "file exists only as .png"
+    },
+    {
+      "file": "K2_W6_G5_task.csv",
+      "from": "i_025.jpg",
+      "to": "i_025.png",
+      "reason": "file exists only as .png (in Vocabulary week 6)"
+    },
+    {
+      "file": "K2_W12_G2_task.csv",
+      "from": "i_025.jpg",
+      "to": "i_025.png",
+      "reason": "file exists only as .png (in Vocabulary week 6)"
+    }
+  ]
+}

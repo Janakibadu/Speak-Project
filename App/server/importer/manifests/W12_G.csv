@@ -1,0 +1,9 @@
+block;format;adaption;note
+G1;H_X4;no;Story with sentence completion, 1 of 2 audios
+G2;R;no;Is the description correct?
+G2_reflection;AX;no;Reflection nominative/dative
+G3;V_3;no;Gap-fill article choice (with example rows)
+G3_reflection_adaption;AX;yes;Remediation after G3 (overview sheet says "Reflection") - to confirm
+G4;N;no;Story
+G4_reflection;AX;no;Reflection nominative/dative
+G5;AM;no;Story remix - deferred (D-09)

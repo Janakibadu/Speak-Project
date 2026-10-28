@@ -1,0 +1,77 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-speak_root_pw}
+      MYSQL_DATABASE: ${DB_NAME:-speak}
+      MYSQL_USER: ${DB_USER:-speak_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-speak_app_pw}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - speak-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-speak_root_pw}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      # First start initialises a fresh volume, which can take over a minute.
+      start_period: 90s
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      - mysql
+
+  api:
+    build:
+      context: ./server
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-speak}
+      DB_USER: ${DB_USER:-speak_app}
+      DB_PASSWORD: ${DB_PASSWORD:-speak_app_pw}
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-random-string}
+      ACCESS_CODE_SECRET: ${ACCESS_CODE_SECRET:-change-this-to-another-long-random-string}
+      TEACHER_IDLE_MINUTES: ${TEACHER_IDLE_MINUTES:-30}
+      TEACHER_MAX_SESSION_HOURS: ${TEACHER_MAX_SESSION_HOURS:-12}
+      PORT: 3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # Local dev only: lets `docker compose exec api npm test` create speak_test.
+      TEST_DB_HOST: mysql
+      TEST_DB_PASSWORD: ${DB_ROOT_PASSWORD:-speak_root_pw}
+    # Schema comes from the migration runner (idempotent), then the dev server starts.
+    command: sh -c "npm run migrate && npm run dev"
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_PROXY_TARGET: http://api:3000
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  speak-mysql-data:

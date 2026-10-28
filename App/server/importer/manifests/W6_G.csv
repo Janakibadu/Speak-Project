@@ -1,0 +1,9 @@
+block;format;adaption;note
+G1;G1;no;Rhyme (listen)
+G2;G2;no;Who/what do you see? Choose 1 of 2 spoken answers
+G2_reflection;AT;no;Teaching nominative/accusative
+G3;V_3;no;Article choice (with example rows)
+G3_reflection_adaption;AT;yes;Remediation after G3
+G4;U;no;Memory (suitcase)
+G4_reflection;AT;no;Overview sheet says "Adaptation", file name says reflection - to confirm
+G5;R;no;True/false statements
