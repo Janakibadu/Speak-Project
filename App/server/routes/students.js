@@ -12,6 +12,19 @@ const router = express.Router();
 router.use(['/classes/:classId/students', '/students'], verifyToken, requireRole('TEACHER'));
 
 const STATUSES = ['active', 'deactivated'];
+const MAX_NAME = 80; // students.display_name
+
+// R46: a display name is required, fits the column and is unique within the
+// class (Design §6.2), ignoring case and surrounding spaces.
+async function nameProblem(displayName, classId, exceptId = null) {
+  if (typeof displayName !== 'string' || !displayName.trim()) return 'Student name is required.';
+  if (displayName.trim().length > MAX_NAME) return 'Student name is too long (max. 80 characters).';
+  const [rows] = await pool.query(
+    'SELECT id FROM students WHERE class_id = ? AND LOWER(display_name) = LOWER(?) AND id <> ?',
+    [classId, displayName.trim(), exceptId || 0]
+  );
+  return rows.length > 0 ? 'A student with this name is already in the class.' : null;
+}
 
 // Access codes are stored only as a hash, so `accessCode` and `qrSvg` are
 // included only in the response that generated them (Design §6.2).
@@ -60,9 +73,8 @@ router.get('/classes/:classId/students', requireOwnership, async (req, res, next
 router.post('/classes/:classId/students', requireOwnership, async (req, res, next) => {
   try {
     const { displayName } = req.body || {};
-    if (typeof displayName !== 'string' || !displayName.trim()) {
-      return res.status(400).json({ error: 'Student name is required.' });
-    }
+    const problem = await nameProblem(displayName, req.classId);
+    if (problem) return res.status(400).json({ error: problem });
 
     const { code, hash } = await generateUniqueAccessCode();
     const studentId = await inTransaction(async (db) => {
@@ -94,9 +106,8 @@ router.patch('/students/:id', requireOwnership, async (req, res, next) => {
     const values = [];
 
     if (displayName !== undefined) {
-      if (typeof displayName !== 'string' || !displayName.trim()) {
-        return res.status(400).json({ error: 'Student name is required.' });
-      }
+      const problem = await nameProblem(displayName, req.classId, Number(req.params.id));
+      if (problem) return res.status(400).json({ error: problem });
       updates.push('display_name = ?');
       values.push(displayName.trim());
     }
@@ -132,6 +143,38 @@ router.delete('/students/:id', requireOwnership, async (req, res, next) => {
       });
     });
     res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// R43: the student plays the module again from the start. Their attempts at
+// its tasks (any content version) are marked `reset`, not deleted: recorded
+// responses are never overwritten (Design §2), they just stop counting.
+router.post('/students/:id/modules/:moduleId/reset', requireOwnership, async (req, res, next) => {
+  try {
+    const [modules] = await pool.query('SELECT id FROM modules WHERE id = ?', [
+      req.params.moduleId,
+    ]);
+    if (modules.length === 0) return res.status(404).json({ error: 'Module not found.' });
+    const reset = await inTransaction(async (db) => {
+      const [result] = await db.query(
+        `UPDATE attempts a
+           JOIN tasks t ON t.id = a.task_id
+           JOIN content_versions v ON v.id = t.content_version_id
+            SET a.status = 'reset'
+          WHERE a.student_id = ? AND v.module_id = ? AND a.status <> 'reset'`,
+        [req.params.id, req.params.moduleId]
+      );
+      await audit(db, {
+        actorTeacherId: req.user.sub,
+        action: 'student.module_reset',
+        targetType: 'student',
+        targetId: Number(req.params.id),
+      });
+      return result.affectedRows;
+    });
+    res.json({ reset });
   } catch (err) {
     next(err);
   }

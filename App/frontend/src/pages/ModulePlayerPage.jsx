@@ -1,15 +1,19 @@
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { apiRequest } from '../api/client.js';
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx';
 import { useStudentAuth } from '../context/StudentAuthContext.jsx';
 import useBodyClass from '../hooks/useBodyClass.js';
 import useDocumentTitle from '../hooks/useDocumentTitle.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
-import useModule, { pathTasks } from '../player/useModule.js';
+import useModule from '../player/useModule.js';
 
 const STOP_ICON = { done: '✅', current: '▶', finish: '🏁' };
 
-// Mockup 11 — the task path of one published module. Progress is not
-// recorded yet (W7, W10), so the first task is "current" and the rest open.
+// Mockup 11 — the task path of one module, with the child's progress from
+// the server (R35). Done tasks can be played again; the current one is where
+// the child continues, including an adaption task their mistakes call for
+// (R32). Later tasks open one after the other.
 export default function ModulePlayerPage() {
   const { t, tServer } = useI18n();
   useBodyClass('app-student');
@@ -18,28 +22,50 @@ export default function ModulePlayerPage() {
   const { moduleId } = useParams();
   const { token } = useStudentAuth();
   const { data, error } = useModule(moduleId, token);
+  const [progress, setProgress] = useState(null);
+  const [progressError, setProgressError] = useState(null);
 
-  if (error?.status === 404) return <Navigate to="/student-home" replace />;
-  if (error) return <div className="alert alert-error">{tServer(error.message)}</div>;
-  if (!data) return null;
+  useEffect(() => {
+    apiRequest(`/modules/${moduleId}/progress`, { token })
+      .then(setProgress)
+      .catch(setProgressError);
+  }, [moduleId, token]);
+
+  const failure = error || progressError;
+  if (failure?.status === 404) return <Navigate to="/student-home" replace />;
+  if (failure) return <div className="alert alert-error">{tServer(failure.message)}</div>;
+  if (!data || !progress) return null;
 
   const { module } = data;
-  const stops = [
-    ...pathTasks(data).map((task, i) => ({
-      n: i + 1,
-      type: task.format,
-      state: i === 0 ? 'current' : 'todo',
-      to: `/play/${moduleId}/${task.id}`,
+  // Adaption tasks show up only when they are due or were played.
+  const shown = progress.tasks.filter(
+    (task) => !task.isAdaption || task.status === 'pending' || task.status === 'done'
+  );
+  let n = 0;
+  const stops = shown.map((task) => {
+    if (!task.isAdaption) n += 1;
+    const state =
+      task.id === progress.current ? 'current' : task.status === 'done' ? 'done' : 'todo';
+    return {
+      key: task.id,
+      n,
+      type: task.isAdaption ? null : task.format,
+      state,
+      to: state === 'todo' ? null : `/play/${moduleId}/${task.id}`,
       label: t(`player.formats.${task.format}`),
-    })),
-  ];
+    };
+  });
   stops.push({
-    n: stops.length + 1,
-    state: 'finish',
+    key: 'finish',
+    n: n + 1,
+    state: progress.current === null ? 'done' : 'finish',
     label: t('module.stops.reward'),
     reward: true,
   });
-  const path = { progress: 0, stops };
+  const path = {
+    progress: progress.total ? Math.round((100 * progress.done) / progress.total) : 0,
+    stops,
+  };
 
   return (
     <>
@@ -88,9 +114,11 @@ export default function ModulePlayerPage() {
           ) : (
             <div className={`stop ${cls}`}>{content}</div>
           );
-          const tag = stop.type
-            ? t('module.taskTag', { n: stop.n, type: stop.type })
-            : t('module.taskN', { n: stop.n });
+          const tag = stop.reward
+            ? t('module.taskN', { n: stop.n })
+            : stop.type
+              ? t('module.taskTag', { n: stop.n, type: stop.type })
+              : t('module.practice');
           const label = (
             <div className="stop-label">
               <div className="tag">{tag}</div>
@@ -106,7 +134,7 @@ export default function ModulePlayerPage() {
           return (
             <div
               className="stop-row"
-              key={stop.n}
+              key={stop.key}
               style={i === path.stops.length - 1 ? { marginBottom: 0 } : undefined}
             >
               {i % 2 === 0 ? (

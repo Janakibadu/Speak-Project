@@ -15,9 +15,9 @@ const TILE_LOOKS = [
   { icon: '🌳', gradient: 'linear-gradient(160deg, var(--mint), #6fe8c4)', rotate: 1.2 },
 ];
 
-// Mockup 10. Tiles are the published modules (GET /api/modules); until
-// assignments exist (W10) every published module is shown. Stars and
-// progress are not recorded yet, so the star count is still sample data.
+// Mockup 10. Tiles are the modules assigned to the child or their class
+// (GET /api/modules, R19), each with the child's progress (R35). Stars
+// (R49) are not recorded yet, so the star count is still sample data.
 export default function StudentHomePage() {
   const { t, tServer } = useI18n();
   useBodyClass('app-student');
@@ -102,7 +102,21 @@ export default function StudentHomePage() {
                     })}
                   </div>
                   <div className="muted" style={{ color: 'rgba(255,255,255,.9)' }}>
-                    {t('student.taskCount', { count: m.taskCount })}
+                    {m.progress.done === m.progress.total
+                      ? `✅ ${t('student.allDone')}`
+                      : t('student.progress', m.progress)}
+                  </div>
+                  <div
+                    className="progress-track"
+                    style={{ marginTop: 8, background: 'rgba(255,255,255,.35)' }}
+                  >
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${m.progress.total ? (100 * m.progress.done) / m.progress.total : 0}%`,
+                        background: '#fff',
+                      }}
+                    ></div>
                   </div>
                 </div>
               </Link>

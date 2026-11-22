@@ -123,6 +123,81 @@ describe('format adapters', () => {
     expect(normaliseRow('U', row).correctOption).toBe('o1,o2,o3');
   });
 
+  it('U: names the suitcase pictures and sounds from Skript W10_G2 as extras', () => {
+    const row = { description_images: 'at_1.mp3', fb_incorrect: 'at_9.mp3' };
+    for (let n = 1; n <= 5; n++) row[`image${n}`] = `i_${n}.jpg`;
+    const trial = normaliseRow('U', row);
+    expect(trial.stimulus.items.map((i) => i.suitcaseImage)).toEqual([
+      'template_i_1.png',
+      'template_i_2.png',
+      'template_i_3.png',
+    ]);
+    expect(trial.feedback).toEqual({ correct: 'stars_correct.mp3', incorrectFirst: 'at_9.mp3' });
+    expect(trial.extraMedia).toEqual([
+      'stars_correct.mp3',
+      'appear.mp3',
+      'disappear.mp3',
+      'template_i_1.png',
+      'template_i_2.png',
+      'template_i_3.png',
+    ]);
+  });
+
+  it('AT (week 6): reads the shifted header by position and pairs the audios', () => {
+    // Header and values exactly as in K2_W6_G2_reflection.csv (client question 9).
+    const { rows } = parseCsv(
+      Buffer.from(
+        'audio_introduction;image1;image2;image3;audio_nom_1;audio_nom_2;audio_nom_3;audio_acc_1;' +
+          'article_acc_2;article_acc_3;article_nom_1;audio_nom_2;audio_nom_3;article_acc_1;' +
+          'audio_acc_2;audio_acc_3;question_audio;explanation_audio\n' +
+          'ai_228.mp3;i_152.jpg;i_151.jpg;i_270.jpg;at_4658.mp3;at_4660.mp3;at_4662.mp3;' +
+          'at_4659.mp3;at_4661.mp3;at_4663.mp3;der;der;der;den;den;den;ai_120.mp3;ai_229.mp3\n'
+      )
+    );
+    const trial = normaliseRow('AT', rows[0].values);
+    expect(trial.kind).toBe('screen');
+    expect(trial.stimulus).toEqual({
+      audio: 'ai_228.mp3',
+      panels: [
+        {
+          image: 'i_152.jpg',
+          first: { article: 'der', audio: 'at_4658.mp3' },
+          second: { article: 'den', audio: 'at_4659.mp3' },
+        },
+        {
+          image: 'i_151.jpg',
+          first: { article: 'der', audio: 'at_4660.mp3' },
+          second: { article: 'den', audio: 'at_4661.mp3' },
+        },
+        {
+          image: 'i_270.jpg',
+          first: { article: 'der', audio: 'at_4662.mp3' },
+          second: { article: 'den', audio: 'at_4663.mp3' },
+        },
+      ],
+      questionAudio: 'ai_120.mp3',
+      explanationAudio: 'ai_229.mp3',
+    });
+  });
+
+  it('AX (weeks 10, 12): labelled columns, dative, and a non-article value left out', () => {
+    const row = { image1: 'i_1.jpg', article_nom_1: 'der', audio_nom_1: 'a.mp3' };
+    Object.assign(row, { article_dat_1: 'dem', audio_dat_1: 'b.mp3' });
+    // K2_W12_G4_reflection: article_nom_3 holds "i_682.jpg".
+    Object.assign(row, { image2: 'i_2.jpg', article_nom_2: 'i_682.jpg', audio_nom_2: 'c.mp3' });
+    Object.assign(row, { article_dat_2: 'der', audio_dat_2: 'd.mp3' });
+    expect(normaliseRow('AX', row).stimulus).toEqual({
+      panels: [
+        {
+          image: 'i_1.jpg',
+          first: { article: 'der', audio: 'a.mp3' },
+          second: { article: 'dem', audio: 'b.mp3' },
+        },
+        { image: 'i_2.jpg', first: { audio: 'c.mp3' }, second: { article: 'der', audio: 'd.mp3' } },
+      ],
+    });
+  });
+
   it('H_X4: story pages are screens, sentence completions are questions', () => {
     expect(normaliseRow('H_X4', { story_audio: 'a.mp3', show_on_screen: 'i.jpg' }).kind).toBe(
       'screen'
@@ -185,6 +260,28 @@ describe('bundle analysis', () => {
     await resolveMedia(analysis, bundle);
     expect(analysis.report.errors).toEqual([]);
     expect(analysis.report.warnings.map((w) => w.code)).toContain('MISSING_OPTIONAL_MEDIA');
+  });
+
+  it("imports U's extra files when present and only warns when they are missing", async () => {
+    const files = {
+      'manifest.csv': 'block;format;adaption;note\nV1;B;no;\nV2;C;yes;\nV3;U;no;\n',
+      'K2_W99_V3_task.csv':
+        'description_images;image1;image2;image3;image4;image5;fb_incorrect\n' +
+        'at_1.mp3;i_1.jpg;i_2.jpg;i_3.jpg;i_4.jpg;i_1.jpg;at_9.mp3\n',
+      'Stimuli/template_i_1.png': 'suitcase 1',
+      'Stimuli/appear.mp3': 'appear',
+    };
+    const bundle = fixtureBundle(files);
+    const analysis = analyseBundle(bundle, NO_CORRECTIONS);
+    const resolved = await resolveMedia(analysis, bundle);
+    expect(analysis.report.errors).toEqual([]);
+    expect(resolved.has('template_i_1.png')).toBe(true);
+    expect(resolved.has('appear.mp3')).toBe(true);
+    const missing = analysis.report.warnings
+      .filter((w) => w.code === 'MISSING_OPTIONAL_MEDIA')
+      .map((w) => w.message);
+    expect(missing).toHaveLength(4); // stars_correct, disappear, template_i_2, template_i_3
+    expect(missing.join(' ')).toContain('template_i_2.png');
   });
 
   it('applies an explicit correction and reports it', async () => {

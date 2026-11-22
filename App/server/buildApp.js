@@ -12,6 +12,9 @@ const studentAuthRoutes = require('./routes/studentAuth');
 const contentRoutes = require('./routes/content');
 const modulesRoutes = require('./routes/modules');
 const mediaRoutes = require('./routes/media');
+const assignmentsRoutes = require('./routes/assignments');
+const attemptsRoutes = require('./routes/attempts');
+const reportsRoutes = require('./routes/reports');
 
 // Builds the Express app without listening, so tests can drive it with
 // Supertest. Each call gets fresh rate-limit counters.
@@ -34,6 +37,9 @@ function buildApp() {
   app.use('/api/content', contentRoutes);
   app.use('/api/modules', modulesRoutes);
   app.use('/api/media', mediaRoutes);
+  app.use('/api/assignments', assignmentsRoutes);
+  app.use('/api', attemptsRoutes); // exposes /api/attempts*, /api/responses
+  app.use('/api', reportsRoutes); // exposes /api/progress, /api/results*
   app.use('/api', studentsRoutes); // exposes /api/classes/:classId/students, /api/students/:id/regenerate-code
 
   // Unknown API paths get a JSON 404, never the SPA's index.html (NFR14).

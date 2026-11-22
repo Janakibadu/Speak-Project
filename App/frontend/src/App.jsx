@@ -21,13 +21,6 @@ import StudentHomePage from './pages/StudentHomePage.jsx';
 import ModulePlayerPage from './pages/ModulePlayerPage.jsx';
 import RewardPage from './pages/RewardPage.jsx';
 import TaskPlayerPage from './pages/TaskPlayerPage.jsx';
-import {
-  AudioChoiceTaskPage,
-  AudioToImageTaskPage,
-  GrammarTaskPage,
-  MemoryTaskPage,
-  StorybookTaskPage,
-} from './pages/TaskPages.jsx';
 
 const teacherRoutes = [
   ['/teacher-dashboard', TeacherDashboardPage],
@@ -41,11 +34,6 @@ const studentRoutes = [
   ['/student-home', StudentHomePage],
   ['/module/:moduleId', ModulePlayerPage],
   ['/play/:moduleId/:taskId', TaskPlayerPage],
-  ['/task/storybook', StorybookTaskPage],
-  ['/task/audio-image', AudioToImageTaskPage],
-  ['/task/audio-choice', AudioChoiceTaskPage],
-  ['/task/grammar', GrammarTaskPage],
-  ['/task/memory', MemoryTaskPage],
   ['/reward', RewardPage],
 ];
 

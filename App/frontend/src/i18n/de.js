@@ -28,11 +28,6 @@ export default {
     studentHome: 'Schüler:innen-Startseite',
     modulePlayer: 'Aufgabenpfad',
     reward: 'Geschafft!',
-    taskStorybook: 'Aufgabe: Bilderbuch',
-    taskAudioImage: 'Aufgabe: Audio zu Bild',
-    taskAudioChoice: 'Aufgabe: Audio-Auswahl',
-    taskGrammar: 'Aufgabe: Grammatik / Artikel',
-    taskMemory: 'Aufgabe: Gedächtnis',
   },
 
   home: {
@@ -136,12 +131,6 @@ export default {
     grammar: 'Grammatik',
   },
 
-  taskNames: {
-    article: 'Artikel',
-    audioImage: 'Audio→Bild',
-    cloze: 'Lückentext',
-  },
-
   units: {
     u6: 'Einheit 6 · Wortschatz',
     u10: 'Einheit 10 · Grammatik',
@@ -155,15 +144,19 @@ export default {
     statStudents: 'Schüler:innen',
     statModules: 'Zugewiesene Module',
     statCompletion: 'Ø Abschlussquote',
-    classCompletion: 'Klassenabschluss — {unit}',
+    classCompletion: 'Abschluss pro Klasse und Modul',
+    noAssignments: 'Noch nichts zugewiesen, daher gibt es noch keinen Fortschritt.',
     recentActivity: 'Letzte Aktivitäten',
+    noActivity: 'Noch kein Kind hat eine Aufgabe begonnen.',
     results: {
       completed: 'Abgeschlossen',
       inProgress: 'In Bearbeitung',
-      needsSupport: 'Unterstützung benötigt',
+      needsSupport: 'Mit Übung',
     },
     overall: 'Gesamtabschluss',
-    overallHint: 'Über alle zugewiesenen Module dieses Halbjahr',
+    overallHint: 'Anteil erledigter Aufgaben über alle zugewiesenen Kinder und Module',
+    done: 'Erledigt',
+    open: 'Offen',
     viewAllResults: 'Alle Ergebnisse ansehen',
   },
 
@@ -231,8 +224,17 @@ export default {
     singleStudent: 'Einzelne:r Schüler:in',
     chooseStudent: 'Eine:n Schüler:in auswählen',
     submit: 'Modul zuweisen',
-    notSavedYet:
-      'Das Speichern von Zuweisungen ist noch nicht verfügbar — diese Funktion folgt in Kürze.',
+    saved: '{module} ist jetzt {to} zugewiesen.',
+    removed: '{module} ist {to} nicht mehr zugewiesen.',
+    confirmRemove: '{module} für {to} entfernen? Bisherige Fortschritte bleiben erhalten.',
+    noModules:
+      'Noch keine veröffentlichten Module. Bitte zuerst eines importieren und veröffentlichen:',
+    current: 'Aktuelle Zuweisungen',
+    none: 'Noch nichts zugewiesen.',
+    module: 'Modul',
+    assignedTo: 'Zugewiesen an',
+    date: 'Datum',
+    remove: 'Entfernen',
   },
 
   import: {
@@ -273,18 +275,40 @@ export default {
 
   results: {
     title: 'Ergebnisse & Fortschritt',
-    print: 'Drucken / Exportieren',
-    filterUnit: 'Einheit',
+    print: 'Drucken',
+    exportTasks: 'CSV: Aufgaben',
+    exportResponses: 'CSV: alle Antworten',
+    exportFailed: 'Der Export hat nicht geklappt. Bitte erneut versuchen.',
+    filterUnit: 'Woche',
     filterArea: 'Bereich',
     filterClass: 'Klasse',
     filterStudent: 'Schüler:in',
     all: 'Alle',
+    progressTitle: 'Fortschritt pro Kind und Modul',
+    completion: 'Abschluss',
+    tasksDone: '{done} von {total} Aufgaben',
+    emptyProgress: 'Keine zugewiesenen Module für diese Filter.',
+    tasksTitle: 'Ergebnisse pro Aufgabe',
+    score: 'Ergebnis',
+    mistakes: 'Fehler',
     attempts: 'Versuche',
-    points: 'Punkte',
-    attemptN: '{n}. Versuch',
+    date: 'Beendet',
     completed: 'Abgeschlossen',
-    viewTrials: 'Durchgänge ansehen',
+    inProgress: 'In Bearbeitung',
+    practised: 'Mit Übung',
+    viewTrials: 'Antworten ansehen',
     resetModule: 'Modul zurücksetzen',
+    confirmReset:
+      '{module} für {student} zurücksetzen? Das Kind beginnt das Modul neu; frühere Antworten bleiben gespeichert, zählen aber nicht mehr.',
+    resetDone: '{module} wurde für {student} zurückgesetzt.',
+    close: 'Schließen',
+    detailSummary: 'Ergebnis {score} % · beim ersten Versuch {firstTry} % · {mistakes} Fehler',
+    noQuestions: 'Diese Aufgabe hat keine Fragen (nur Zuhören).',
+    question: 'Frage {n}',
+    correctAnswer: 'Richtige Antwort',
+    notAnswered: 'Noch nicht beantwortet',
+    rightOnTry: 'Richtig im {n}. Versuch',
+    answerShown: 'Antwort nach zwei Versuchen gezeigt',
     empty: 'Keine Ergebnisse für diese Filter.',
   },
 
@@ -293,6 +317,8 @@ export default {
     areas: { vocabulary: 'Wortschatz', grammar: 'Grammatik' },
     taskCount_one: '{count} Aufgabe',
     taskCount_other: '{count} Aufgaben',
+    progress: '{done} von {total} geschafft',
+    allDone: 'Alles geschafft!',
     noModules: 'Hier gibt es noch nichts zu spielen. Deine Lehrkraft schaltet bald etwas frei!',
     stars_one: '{count} Stern',
     stars_other: '{count} Sterne',
@@ -305,6 +331,7 @@ export default {
   module: {
     taskTag: 'Aufgabe {n} · Typ {type}',
     taskN: 'Aufgabe {n}',
+    practice: 'Noch einmal üben',
     youAreHere: 'du bist hier',
     stops: {
       learnArticles: 'Lernen: der, die, das',
@@ -325,6 +352,10 @@ export default {
     start: 'Los geht’s!',
     replay: 'Noch einmal hören',
     taskDone: 'Super, geschafft!',
+    example: 'Schau, so geht es',
+    hearWord: 'Wort anhören',
+    explain: 'Warum ist das so?',
+    saveFailed: 'Das hat nicht geklappt. Bitte noch einmal versuchen.',
     formats: {
       A: 'Bilderbuch',
       N: 'Geschichte',
@@ -355,42 +386,6 @@ export default {
 
   tasks: {
     next: 'Weiter',
-    play: 'Abspielen',
-    storybook: {
-      title: 'Typ A · Bilderbuch-Hörverstehen',
-      page: 'Bilderbuch · Seite {n} von {total}',
-      translation: 'Der kleine Igel fand einen Pilz im Wald.',
-      gloss: 'der Pilz',
-    },
-    audioImage: {
-      title: 'Typ B · Audio → Bildauswahl',
-      instruction: 'Tippe auf das Bild für',
-    },
-    audioChoice: {
-      title: 'Typ F_1/F_2 · Bild → Audio, klanglich ähnlicher Distraktor',
-      instruction: 'Welcher Ton passt zum Bild?',
-      threeMoments: 'hier als drei Momente desselben Durchgangs gezeigt',
-      tags: {
-        before: 'Vor der Antwort',
-        firstWrong: '1. falscher Versuch',
-        correctSecond: 'Richtig — Versuch 2',
-      },
-      tryAgain: "Nicht ganz — hör noch einmal genau hin und versuch's noch einmal!",
-      correct: 'Ja! Das ist „der Elefant" — super zugehört!',
-      remedial:
-        'Wäre hier auch der 2. Versuch falsch, würde die Engine als Nächstes eine Nachhilfeaufgabe vom Typ C einfügen (Fehlerschwelle erreicht).',
-    },
-    grammar: {
-      title: 'Typ G1/G2/V_3 · Grammatik, Artikelauswahl & Lückentext',
-      instruction: 'Welcher Artikel passt? Der, die oder das?',
-      case: 'Nominativ',
-    },
-    memory: {
-      title: 'Typ U · Gedächtnis (Koffer)',
-      instruction: 'Was davon haben wir in den Koffer gepackt?',
-      remembered: '{n} von {total} bisher erinnert',
-      finish: 'Aufgabe beenden',
-    },
   },
 
   // English API messages → German
@@ -440,5 +435,9 @@ export default {
       'Zu viele Anmeldeversuche. Bitte versuchen Sie es in 15 Minuten erneut.',
     'Too many tries. Please ask your teacher for help.':
       'Zu viele Versuche. Bitte frag deine Lehrerin oder deinen Lehrer.',
+    'Choose a module and either a class or a student.':
+      'Bitte ein Modul und entweder eine Klasse oder ein Kind wählen.',
+    'This module is already assigned there.': 'Dieses Modul ist dort bereits zugewiesen.',
+    'Assignment not found.': 'Zuweisung nicht gefunden.',
   },
 };

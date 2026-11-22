@@ -117,6 +117,13 @@ function analyseBundle(bundle, options = {}) {
   }
   const manifest = parseManifest(manifestBuffer);
 
+  function addRef(name, optional, place) {
+    const ref = mediaRefs.get(name) || { optional: true, places: [] };
+    ref.optional = ref.optional && optional;
+    ref.places.push(place);
+    mediaRefs.set(name, ref);
+  }
+
   // Applies corrections, blanks "None.*" and collects media references.
   function cleanRow(fileName, values, line, { optionalKeys = new Set() } = {}) {
     const out = {};
@@ -131,10 +138,7 @@ function analyseBundle(bundle, options = {}) {
       }
       if (NONE_RE.test(value)) value = '';
       if (value && FILE_RE.test(value)) {
-        const ref = mediaRefs.get(value) || { optional: true, places: [] };
-        ref.optional = ref.optional && optionalKeys.has(key);
-        ref.places.push({ file: fileName, line, column: key });
-        mediaRefs.set(value, ref);
+        addRef(value, optionalKeys.has(key), { file: fileName, line, column: key });
       } else if (value && MEDIA_ID_RE.test(value)) {
         error(
           'MALFORMED_MEDIA_NAME',
@@ -205,8 +209,10 @@ function analyseBundle(bundle, options = {}) {
             { file: file.name, line }
           );
         const clean = cleanRow(file.name, values, line);
-        const trial = normaliseRow(entry.format, clean, { example: isExample });
+        const { extraMedia, ...trial } = normaliseRow(entry.format, clean, { example: isExample });
         trial.source = { file: file.name, line };
+        for (const name of extraMedia)
+          addRef(name, true, { ...trial.source, column: '(implicit)' });
         trials.push(trial);
       }
     };
@@ -274,7 +280,7 @@ function analyseBundle(bundle, options = {}) {
 // Resolves every referenced media name: exact name in the bundle, else a
 // case-insensitive match (warning), else `lookupExternal(name)` (content
 // already imported for another module), else an error or, for optional
-// instruction images, a warning. Mutates and returns the report.
+// files (instruction images, U's extras), a warning. Mutates and returns the report.
 async function resolveMedia(analysis, bundle, lookupExternal = async () => null) {
   const { report } = analysis;
   const byLower = new Map([...bundle.media.keys()].map((n) => [n.toLowerCase(), n]));
@@ -314,7 +320,7 @@ async function resolveMedia(analysis, bundle, lookupExternal = async () => null)
       } else if (ref.optional) {
         report.warnings.push({
           code: 'MISSING_OPTIONAL_MEDIA',
-          message: `Instruction image ${ref.name} is missing and will be left out.`,
+          message: `Optional file ${ref.name} is missing and will be left out.`,
           ...where,
         });
       } else {

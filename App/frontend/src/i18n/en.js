@@ -29,11 +29,6 @@ export default {
     studentHome: 'Student Home',
     modulePlayer: 'Task Path',
     reward: 'Well done!',
-    taskStorybook: 'Task: Storybook',
-    taskAudioImage: 'Task: Audio to Picture',
-    taskAudioChoice: 'Task: Audio Choice',
-    taskGrammar: 'Task: Grammar / Articles',
-    taskMemory: 'Task: Memory',
   },
 
   home: {
@@ -134,12 +129,6 @@ export default {
     grammar: 'Grammar',
   },
 
-  taskNames: {
-    article: 'Articles',
-    audioImage: 'Audio→Picture',
-    cloze: 'Cloze text',
-  },
-
   units: {
     u6: 'Unit 6 · Vocabulary',
     u10: 'Unit 10 · Grammar',
@@ -153,15 +142,19 @@ export default {
     statStudents: 'Students',
     statModules: 'Assigned modules',
     statCompletion: 'Avg. completion rate',
-    classCompletion: 'Class completion — {unit}',
+    classCompletion: 'Completion per class and module',
+    noAssignments: 'Nothing assigned yet, so there is no progress to show.',
     recentActivity: 'Recent activity',
+    noActivity: 'No student has started a task yet.',
     results: {
       completed: 'Completed',
       inProgress: 'In progress',
-      needsSupport: 'Needs support',
+      needsSupport: 'Needed practice',
     },
     overall: 'Overall completion',
-    overallHint: 'Across all assigned modules this term',
+    overallHint: 'Share of tasks finished, across every assigned student and module',
+    done: 'Done',
+    open: 'Open',
     viewAllResults: 'View all results',
   },
 
@@ -225,7 +218,16 @@ export default {
     singleStudent: 'Individual student',
     chooseStudent: 'Choose a student',
     submit: 'Assign module',
-    notSavedYet: "Saving assignments isn't available yet — this feature is coming soon.",
+    saved: '{module} is now assigned to {to}.',
+    removed: '{module} is no longer assigned to {to}.',
+    confirmRemove: 'Remove {module} from {to}? Progress already made is kept.',
+    noModules: 'No published modules yet. Import and publish one first:',
+    current: 'Current assignments',
+    none: 'Nothing assigned yet.',
+    module: 'Module',
+    assignedTo: 'Assigned to',
+    date: 'Date',
+    remove: 'Remove',
   },
 
   import: {
@@ -265,18 +267,40 @@ export default {
 
   results: {
     title: 'Results & progress',
-    print: 'Print / Export',
-    filterUnit: 'Unit',
+    print: 'Print',
+    exportTasks: 'CSV: tasks',
+    exportResponses: 'CSV: all answers',
+    exportFailed: 'The export did not work. Please try again.',
+    filterUnit: 'Week',
     filterArea: 'Area',
     filterClass: 'Class',
     filterStudent: 'Student',
     all: 'All',
+    progressTitle: 'Progress per student and module',
+    completion: 'Completion',
+    tasksDone: '{done} of {total} tasks',
+    emptyProgress: 'No assigned modules for these filters.',
+    tasksTitle: 'Task results',
+    score: 'Score',
+    mistakes: 'Mistakes',
     attempts: 'Attempts',
-    points: 'Points',
-    attemptN: 'Attempt {n}',
+    date: 'Finished',
     completed: 'Completed',
-    viewTrials: 'View trials',
+    inProgress: 'In progress',
+    practised: 'Needed practice',
+    viewTrials: 'View answers',
     resetModule: 'Reset module',
+    confirmReset:
+      'Reset {module} for {student}? The child starts the module again; earlier answers stay stored but no longer count.',
+    resetDone: '{module} was reset for {student}.',
+    close: 'Close',
+    detailSummary: 'Score {score}% · first try {firstTry}% · {mistakes} mistakes',
+    noQuestions: 'This task has no questions (listening only).',
+    question: 'Question {n}',
+    correctAnswer: 'Correct answer',
+    notAnswered: 'Not answered yet',
+    rightOnTry: 'Right on try {n}',
+    answerShown: 'Answer shown after two tries',
     empty: 'No results for these filters.',
   },
 
@@ -285,6 +309,8 @@ export default {
     areas: { vocabulary: 'Vocabulary', grammar: 'Grammar' },
     taskCount_one: '{count} task',
     taskCount_other: '{count} tasks',
+    progress: '{done} of {total} done',
+    allDone: 'All done!',
     noModules: 'Nothing to play here yet. Your teacher will unlock something soon!',
     stars_one: '{count} star',
     stars_other: '{count} stars',
@@ -297,6 +323,7 @@ export default {
   module: {
     taskTag: 'Task {n} · Type {type}',
     taskN: 'Task {n}',
+    practice: 'Practise again',
     youAreHere: 'you are here',
     stops: {
       learnArticles: 'Learn: der, die, das',
@@ -317,6 +344,10 @@ export default {
     start: "Let's go!",
     replay: 'Listen again',
     taskDone: 'Great, all done!',
+    example: 'Watch how it works',
+    hearWord: 'Hear the word',
+    explain: 'Why is that?',
+    saveFailed: "That didn't work. Please try again.",
     formats: {
       A: 'Picture book',
       N: 'Story',
@@ -347,42 +378,6 @@ export default {
 
   tasks: {
     next: 'Next',
-    play: 'Play',
-    storybook: {
-      title: 'Type A · Storybook listening',
-      page: 'Storybook · Page {n} of {total}',
-      translation: 'The little hedgehog found a mushroom in the forest.',
-      gloss: 'the mushroom',
-    },
-    audioImage: {
-      title: 'Type B · Audio → picture choice',
-      instruction: 'Tap the picture for',
-    },
-    audioChoice: {
-      title: 'Type F_1/F_2 · Picture → audio, similar-sounding distractor',
-      instruction: 'Which sound matches the picture?',
-      threeMoments: 'shown here as three moments of the same trial',
-      tags: {
-        before: 'Before answering',
-        firstWrong: '1st wrong attempt',
-        correctSecond: 'Correct — attempt 2',
-      },
-      tryAgain: 'Not quite — listen carefully and try again!',
-      correct: 'Yes! That\'s "der Elefant" — great listening!',
-      remedial:
-        'If the 2nd attempt were wrong too, the engine would insert a type C remedial task next (error threshold reached).',
-    },
-    grammar: {
-      title: 'Type G1/G2/V_3 · Grammar, article choice & cloze',
-      instruction: 'Which article fits? Der, die or das?',
-      case: 'nominative',
-    },
-    memory: {
-      title: 'Type U · Memory (suitcase)',
-      instruction: 'Which of these did we pack in the suitcase?',
-      remembered: '{n} of {total} remembered so far',
-      finish: 'Finish task',
-    },
   },
 
   serverMessages: {},

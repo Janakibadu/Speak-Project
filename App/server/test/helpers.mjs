@@ -19,6 +19,9 @@ export async function resetDb() {
 }
 
 export async function resetContent() {
+  // Learner data points at content (attempts → tasks, assignments → modules).
+  await pool.query('DELETE FROM attempts'); // responses cascade
+  await pool.query('DELETE FROM assignments');
   await pool.query('UPDATE modules SET published_version_id = NULL');
   await pool.query('DELETE FROM content_versions'); // tasks, trials, content_media cascade
   await pool.query('DELETE FROM modules');
@@ -58,4 +61,12 @@ export function studentToken(id, classId) {
   return jwt.sign({ sub: id, classId, role: 'STUDENT' }, process.env.JWT_SECRET, {
     expiresIn: '1h',
   });
+}
+
+export async function assignModule(moduleId, { classId = null, studentId = null }) {
+  await pool.query('INSERT INTO assignments (module_id, class_id, student_id) VALUES (?, ?, ?)', [
+    moduleId,
+    classId,
+    studentId,
+  ]);
 }

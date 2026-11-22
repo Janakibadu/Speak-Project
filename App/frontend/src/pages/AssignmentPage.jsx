@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { apiRequest } from '../api/client.js';
 import TeacherLayout from '../components/TeacherLayout.jsx';
 import { useTeacherAuth } from '../context/TeacherAuthContext.jsx';
-import { MODULES } from '../data/demoData.js';
 import useBodyClass from '../hooks/useBodyClass.js';
 import useClasses from '../hooks/useClasses.js';
 import useDocumentTitle from '../hooks/useDocumentTitle.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
-// Mockup 07. Classes and students are live; saving an assignment has no
-// endpoint yet, so the final step only confirms the selection.
+// Mockup 07, R19: assign a published module to a whole class or to one
+// student, and see or remove the assignments made so far. Students only see
+// modules assigned to them or their class.
 export default function AssignmentPage() {
   const { t, tServer } = useI18n();
   useBodyClass('app');
@@ -25,7 +25,25 @@ export default function AssignmentPage() {
   const [classId, setClassId] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentId, setStudentId] = useState('');
-  const [notice, setNotice] = useState(false);
+  const [modules, setModules] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [notice, setNotice] = useState(null); // { kind: 'success' | 'error', text }
+  const [saving, setSaving] = useState(false);
+
+  const loadAssignments = useCallback(
+    () =>
+      apiRequest('/assignments', { token })
+        .then((data) => setAssignments(data.assignments))
+        .catch((err) => setNotice({ kind: 'error', text: tServer(err.message) })),
+    [token, tServer]
+  );
+
+  useEffect(() => {
+    apiRequest('/modules', { token })
+      .then((data) => setModules(data.modules))
+      .catch((err) => setNotice({ kind: 'error', text: tServer(err.message) }));
+    loadAssignments();
+  }, [token, tServer, loadAssignments]);
 
   useEffect(() => {
     if (classes.length === 0 || classId) return;
@@ -45,6 +63,47 @@ export default function AssignmentPage() {
   const step = !moduleId ? 1 : !target ? 2 : 3;
   const ready =
     moduleId && selectedClass && (target === 'class' || (target === 'student' && studentId));
+  const moduleName = (week, area) =>
+    t('student.moduleTitle', { week, area: t(`student.areas.${area}`) });
+
+  async function submit() {
+    setSaving(true);
+    setNotice(null);
+    try {
+      const body =
+        target === 'class' ? { moduleId, classId } : { moduleId, studentId: Number(studentId) };
+      await apiRequest('/assignments', { method: 'POST', body, token });
+      const module = modules.find((m) => m.id === moduleId);
+      const to =
+        target === 'class'
+          ? selectedClass.name
+          : students.find((s) => s.id === Number(studentId))?.displayName;
+      setNotice({
+        kind: 'success',
+        text: t('assign.saved', { module: moduleName(module.week, module.area), to }),
+      });
+      setModuleId(null);
+      setTarget(null);
+      loadAssignments();
+    } catch (err) {
+      setNotice({ kind: 'error', text: tServer(err.message) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(assignment) {
+    const to = assignment.studentName || assignment.className;
+    const module = moduleName(assignment.week, assignment.area);
+    if (!window.confirm(t('assign.confirmRemove', { module, to }))) return;
+    try {
+      await apiRequest(`/assignments/${assignment.id}`, { method: 'DELETE', token });
+      setNotice({ kind: 'success', text: t('assign.removed', { module, to }) });
+      loadAssignments();
+    } catch (err) {
+      setNotice({ kind: 'error', text: tServer(err.message) });
+    }
+  }
 
   return (
     <>
@@ -84,21 +143,29 @@ export default function AssignmentPage() {
         <div className="h3" style={{ marginBottom: 12 }}>
           1. {t('assign.step1')}
         </div>
+        {modules.length === 0 && (
+          <div className="card empty-state" style={{ marginBottom: 26 }}>
+            {t('assign.noModules')}{' '}
+            <Link to="/content-import" style={{ color: 'var(--ink)', fontWeight: 700 }}>
+              {t('nav.contentImport')}
+            </Link>
+          </div>
+        )}
         <div className="module-grid">
-          {MODULES.map((m) => (
+          {modules.map((m) => (
             <button
               key={m.id}
               type="button"
               className={`card module-card${moduleId === m.id ? ' selected' : ''}`}
               onClick={() => setModuleId(m.id)}
             >
-              <span className={`pill ${m.pill}`}>{t('assign.unit', { n: m.id })}</span>
+              <span className={`pill ${m.area === 'grammar' ? 'pill-grape' : 'pill-sky'}`}>
+                {t('assign.unit', { n: m.week })}
+              </span>
               <div className="h3" style={{ marginTop: 10 }}>
                 {t(`areas.${m.area}`)}
               </div>
-              <div className="muted">
-                {t('assign.taskCount', { count: m.taskCount })} · {m.types}
-              </div>
+              <div className="muted">{t('assign.taskCount', { count: m.taskCount })}</div>
             </button>
           ))}
         </div>
@@ -179,8 +246,12 @@ export default function AssignmentPage() {
         )}
 
         {notice && (
-          <div className="alert alert-info" style={{ marginTop: 22 }}>
-            {t('assign.notSavedYet')}
+          <div
+            className={`alert ${notice.kind === 'success' ? 'alert-success' : 'alert-error'}`}
+            role="status"
+            style={{ marginTop: 22 }}
+          >
+            {notice.text}
           </div>
         )}
 
@@ -191,12 +262,52 @@ export default function AssignmentPage() {
           <button
             className="btn btn-md btn-coral"
             type="button"
-            disabled={!ready}
-            onClick={() => setNotice(true)}
+            disabled={!ready || saving}
+            onClick={submit}
           >
             {t('assign.submit')} ▶
           </button>
         </div>
+
+        <div className="h3" style={{ margin: '36px 0 12px' }}>
+          {t('assign.current')}
+        </div>
+        {assignments.length === 0 ? (
+          <div className="card empty-state">{t('assign.none')}</div>
+        ) : (
+          <div className="card table-scroll" style={{ padding: 0 }}>
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>{t('assign.module')}</th>
+                  <th>{t('assign.assignedTo')}</th>
+                  <th>{t('assign.date')}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {assignments.map((a) => (
+                  <tr key={a.id}>
+                    <td>{moduleName(a.week, a.area)}</td>
+                    <td>
+                      {a.studentId ? `🧒 ${a.studentName} (${a.className})` : `👥 ${a.className}`}
+                    </td>
+                    <td>{new Date(a.assignedAt).toLocaleDateString()}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        type="button"
+                        onClick={() => remove(a)}
+                      >
+                        {t('assign.remove')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </TeacherLayout>
     </>
   );

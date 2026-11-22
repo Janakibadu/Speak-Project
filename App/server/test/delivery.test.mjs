@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import { beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import {
+  assignModule,
   buildApp,
   createClass,
   createStudent,
@@ -32,10 +33,13 @@ describe('content delivery and media', () => {
     kidToken = studentToken(student.id, klass.id);
   });
 
-  async function importFixture({ publish = true } = {}) {
+  // Imports the fixture module and, unless told otherwise, assigns it to the
+  // student's class (R19: students only see assigned modules).
+  async function importFixture({ publish = true, assign = true } = {}) {
     const { versionId } = await importBundle(fixtureBundle());
     if (publish) await publishVersion(versionId);
     const [[mod]] = await pool.query('SELECT id FROM modules WHERE week = 99');
+    if (assign) await assignModule(mod.id, { classId: klass.id });
     return { versionId, moduleId: mod.id };
   }
 
@@ -53,7 +57,7 @@ describe('content delivery and media', () => {
     });
 
     it('lists published modules only, for students and teachers', async () => {
-      await importFixture({ publish: false });
+      await importFixture({ publish: false, assign: false });
       let res = await request(app).get('/api/modules').set(auth(kidToken));
       expect(res.status).toBe(200);
       expect(res.body.modules).toEqual([]);
@@ -71,6 +75,27 @@ describe('content delivery and media', () => {
       ]);
       res = await request(app).get('/api/modules').set(auth(teacher.token));
       expect(res.body.modules).toHaveLength(1);
+    });
+
+    it('shows a student only modules assigned to their class or to them (R19)', async () => {
+      const { moduleId } = await importFixture({ assign: false });
+      let res = await request(app).get('/api/modules').set(auth(kidToken));
+      expect(res.body.modules).toEqual([]);
+      expect(
+        (await request(app).get(`/api/modules/${moduleId}/tasks`).set(auth(kidToken))).status
+      ).toBe(404);
+      // Teachers see every published module.
+      res = await request(app).get('/api/modules').set(auth(teacher.token));
+      expect(res.body.modules).toHaveLength(1);
+
+      await assignModule(moduleId, { studentId: student.id });
+      res = await request(app).get('/api/modules').set(auth(kidToken));
+      expect(res.body.modules).toEqual([
+        expect.objectContaining({ id: moduleId, progress: { done: 0, total: 1 } }),
+      ]);
+      expect(
+        (await request(app).get(`/api/modules/${moduleId}/tasks`).set(auth(kidToken))).status
+      ).toBe(200);
     });
 
     it('rejects a deactivated or deleted student', async () => {
@@ -123,6 +148,20 @@ describe('content delivery and media', () => {
         id: await assetId(versionId, 'i_1.jpg'),
         kind: 'image',
       });
+    });
+
+    it('delivers the tries per question from task_type_config (R31)', async () => {
+      const { moduleId } = await importFixture();
+      let res = await request(app).get(`/api/modules/${moduleId}/tasks`).set(auth(kidToken));
+      expect(res.body.tasks.map((t) => t.attemptsPerTrial)).toEqual([2, 2]);
+
+      await pool.query("UPDATE task_type_config SET attempts_per_trial = 3 WHERE format = 'B'");
+      try {
+        res = await request(app).get(`/api/modules/${moduleId}/tasks`).set(auth(kidToken));
+        expect(res.body.tasks.map((t) => t.attemptsPerTrial)).toEqual([3, 2]);
+      } finally {
+        await pool.query("UPDATE task_type_config SET attempts_per_trial = 2 WHERE format = 'B'");
+      }
     });
 
     it('leaves out tasks that are not playable', async () => {

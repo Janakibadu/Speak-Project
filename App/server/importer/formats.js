@@ -83,6 +83,55 @@ function articleOptions(row) {
   }));
 }
 
+// The suitcase version of a U picture: always template_<id>.png, also when
+// the CSV names the .jpg of the object (week 10).
+const suitcaseImage = (image) => image && `template_${image.replace(/\.[^.]+$/, '')}.png`;
+
+const ARTICLES = new Set(['der', 'die', 'das', 'den', 'dem', 'des']);
+const article = (value) => (ARTICLES.has((value || '').toLowerCase()) ? value : '');
+
+// Reflection screens. Weeks 10 and 12 label every column per picture
+// (image1, article_nom_1, audio_nom_1, article_acc_1 or article_dat_1, …).
+// The week 6 files have a shifted header (client question 9): the values are
+// intro audio, three images, six audios, then "der der der den den den". We
+// read them by position and pair the audios by their numbers (at_4658 = der,
+// at_4659 = den, …). PROVISIONAL until the client confirms.
+// A value that is not an article (W12 G4: "i_682.jpg") is left out.
+function reflection(row) {
+  const shifted = 'audio_introduction' in row;
+  const panels = [1, 2, 3].map((n) => {
+    if (shifted) {
+      const i = n - 1;
+      return {
+        image: row[`image${n}`],
+        first: compact({
+          article: article([row.article_nom_1, row.audio_nom_2__2, row.audio_nom_3__2][i]),
+          audio: row[`audio_nom_${n}`],
+        }),
+        second: compact({
+          article: article([row.article_acc_1, row.audio_acc_2, row.audio_acc_3][i]),
+          audio: [row.audio_acc_1, row.article_acc_2, row.article_acc_3][i],
+        }),
+      };
+    }
+    const kase = row[`article_dat_${n}`] !== undefined ? 'dat' : 'acc';
+    return {
+      image: row[`image${n}`],
+      first: compact({ article: article(row[`article_nom_${n}`]), audio: row[`audio_nom_${n}`] }),
+      second: compact({
+        article: article(row[`article_${kase}_${n}`]),
+        audio: row[`audio_${kase}_${n}`],
+      }),
+    };
+  });
+  return {
+    audio: row.audio_introduction,
+    panels: panels.filter((panel) => panel.image),
+    questionAudio: row.question_audio,
+    explanationAudio: row.explanation_audio,
+  };
+}
+
 // `scored`: mistakes count towards the remediation threshold (R32).
 // `playable: false`: imported and kept, but not yet offered to children.
 const FORMATS = {
@@ -205,16 +254,26 @@ const FORMATS = {
   },
   U: {
     scored: true,
-    // Three objects go into the suitcase (images 1–3, named in audio); the
-    // child then picks what was inside from all five. Answer: images 1–3.
-    trial: (row) =>
-      question(
+    // Skript W10_G2: three objects appear one by one in the suitcase while
+    // description_images plays, then disappear; the child finds them among
+    // all five pictures, one tap at a time, until all three are found.
+    // Answer: images 1–3. The suitcase pictures (template_<id>.png), the
+    // appear/disappear sounds and the "correct" sound are not in the CSV;
+    // the script names them, so they are imported as optional extras.
+    trial: (row) => {
+      const trial = question(
         {
           audio: row.description_images,
           question: row.question,
           items: [1, 2, 3].map((n) =>
-            compact({ image: row[`image${n}`], audio: row[`audio_image${n}`] })
+            compact({
+              image: row[`image${n}`],
+              audio: row[`audio_image${n}`],
+              suitcaseImage: suitcaseImage(row[`image${n}`]),
+            })
           ),
+          appearAudio: 'appear.mp3',
+          disappearAudio: 'disappear.mp3',
         },
         [1, 2, 3, 4, 5].map((n) => ({
           image: row[`image${n}`],
@@ -222,7 +281,16 @@ const FORMATS = {
           correct: n <= 3,
         })),
         row
-      ),
+      );
+      trial.feedback = { correct: 'stars_correct.mp3', ...trial.feedback };
+      return trial;
+    },
+    extraMedia: (trial) => [
+      trial.feedback.correct,
+      trial.stimulus.appearAudio,
+      trial.stimulus.disappearAudio,
+      ...trial.stimulus.items.map((item) => item.suitcaseImage),
+    ],
   },
   H_X4: {
     scored: true,
@@ -244,11 +312,11 @@ const FORMATS = {
       );
     },
   },
-  // Teaching and reflection screens (R28): content is in `data`. Their column
-  // labels don't always match the values (e.g. W6), so nothing is mapped yet.
-  AT: { scored: false, trial: () => screen({}) },
-  AV: { scored: false, trial: () => screen({}) },
-  AX: { scored: false, trial: () => screen({}) },
+  // Teaching and reflection screens (R28): three pictures, each heard with
+  // two articles (der → den / dem). Not scored.
+  AT: { scored: false, trial: (row) => screen(reflection(row)) },
+  AV: { scored: false, trial: (row) => screen(reflection(row)) },
+  AX: { scored: false, trial: (row) => screen(reflection(row)) },
   // Pending client decision / engine design: kept in `data`, not offered yet.
   AD: { scored: true, playable: false, trial: () => screen({}) },
   AF: { scored: true, playable: false, trial: () => screen({}) },
@@ -271,6 +339,8 @@ function normaliseRow(format, values, { example = false } = {}) {
         .join(',') || null,
     feedback: trial.feedback || {},
     data: values,
+    // Files the trial uses that no CSV column names (U); optional.
+    extraMedia: adapter.extraMedia ? adapter.extraMedia(trial).filter(Boolean) : [],
   };
 }
 

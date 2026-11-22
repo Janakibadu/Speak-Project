@@ -62,22 +62,23 @@ async function migrate(connection, { dir = MIGRATIONS_DIR, log = console.log } =
   }
 }
 
-async function main() {
-  require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+// Opens its own connection; also called by index.js at startup in production.
+async function runMigrations(options) {
   const connection = await mysql.createConnection({ ...dbConfig(), multipleStatements: true });
   try {
-    await migrate(connection);
+    return await migrate(connection, options);
   } finally {
     await connection.end();
   }
 }
 
 if (require.main === module) {
-  main().catch((err) => {
+  require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+  runMigrations().catch((err) => {
     // Code and message only: no stack, no connection settings (NFR14).
     console.error(`[migrate] ${err.code || 'ERROR'}: ${err.message}`);
     process.exit(1);
   });
 }
 
-module.exports = { migrate, listMigrations };
+module.exports = { migrate, listMigrations, runMigrations };
